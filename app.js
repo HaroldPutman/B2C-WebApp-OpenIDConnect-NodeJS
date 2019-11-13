@@ -30,12 +30,15 @@
 var express = require('express');
 var cookieParser = require('cookie-parser');
 var expressSession = require('express-session');
+var morgan = require('morgan');
 var bodyParser = require('body-parser');
 var methodOverride = require('method-override');
 var passport = require('passport');
 var util = require('util');
 var bunyan = require('bunyan');
+require('dotenv').config();
 var config = require('./config');
+
 
 // set up database for express session
 var MongoStore = require('connect-mongo')(expressSession);
@@ -50,7 +53,7 @@ var log = bunyan.createLogger({
 });
 
 /******************************************************************************
- * Set up passport in the app 
+ * Set up passport in the app
  ******************************************************************************/
 
 //-----------------------------------------------------------------------------
@@ -85,11 +88,11 @@ var findByOid = function(oid, fn) {
 
 //-----------------------------------------------------------------------------
 // Use the OIDCStrategy within Passport.
-// 
+//
 // Strategies in passport require a `verify` function, which accepts credentials
 // (in this case, the `oid` claim in id_token), and invoke a callback to find
 // the corresponding user object.
-// 
+//
 // The following are the accepted prototypes for the `verify` function
 // (1) function(iss, sub, done)
 // (2) function(iss, sub, profile, done)
@@ -119,6 +122,7 @@ passport.use(new OIDCStrategy({
     useCookieInsteadOfSession: config.creds.useCookieInsteadOfSession,
     cookieEncryptionKeys: config.creds.cookieEncryptionKeys,
     clockSkew: config.creds.clockSkew,
+    loggingNoPII: false,
   },
   function(iss, sub, profile, accessToken, refreshToken, done) {
     if (!profile.oid) {
@@ -149,7 +153,7 @@ var app = express();
 
 app.set('views', __dirname + '/views');
 app.set('view engine', 'ejs');
-app.use(express.logger());
+app.use(morgan('combined'))
 app.use(methodOverride());
 app.use(cookieParser());
 
@@ -174,17 +178,16 @@ app.use(bodyParser.urlencoded({ extended : true }));
 // persistent login sessions (recommended).
 app.use(passport.initialize());
 app.use(passport.session());
-app.use(app.router);
 app.use(express.static(__dirname + '/../../public'));
 
 //-----------------------------------------------------------------------------
 // Set up the route controller
 //
-// 1. For 'login' route and 'returnURL' route, use `passport.authenticate`. 
+// 1. For 'login' route and 'returnURL' route, use `passport.authenticate`.
 // This way the passport middleware can redirect the user to login page, receive
 // id_token etc from returnURL.
 //
-// 2. For the routes you want to check if user is already logged in, use 
+// 2. For the routes you want to check if user is already logged in, use
 // `ensureAuthenticated`. It checks if there is an user stored in session, if not
 // it will call `passport.authenticate` to ask for user to log in.
 //-----------------------------------------------------------------------------
@@ -204,12 +207,12 @@ app.get('/account', ensureAuthenticated, function(req, res) {
 
 app.get('/login',
   function(req, res, next) {
-    passport.authenticate('azuread-openidconnect', 
-      { 
+    passport.authenticate('azuread-openidconnect',
+      {
         response: res,                      // required
         resourceURL: config.resourceURL,    // optional. Provide a value if you want to specify the resource.
         customState: 'my_state',            // optional. Provide a value if you want to provide custom state value.
-        failureRedirect: '/' 
+        failureRedirect: '/'
       }
     )(req, res, next);
   },
@@ -224,10 +227,10 @@ app.get('/login',
 // redirected to '/' (home page); otherwise, it passes to the next middleware.
 app.get('/auth/openid/return',
   function(req, res, next) {
-    passport.authenticate('azuread-openidconnect', 
-      { 
+    passport.authenticate('azuread-openidconnect',
+      {
         response: res,                      // required
-        failureRedirect: '/'  
+        failureRedirect: '/'
       }
     )(req, res, next);
   },
@@ -242,10 +245,10 @@ app.get('/auth/openid/return',
 // redirected to '/' (home page); otherwise, it passes to the next middleware.
 app.post('/auth/openid/return',
   function(req, res, next) {
-    passport.authenticate('azuread-openidconnect', 
-      { 
+    passport.authenticate('azuread-openidconnect',
+      {
         response: res,                      // required
-        failureRedirect: '/'  
+        failureRedirect: '/'
       }
     )(req, res, next);
   },
