@@ -38,6 +38,8 @@ var util = require('util');
 var bunyan = require('bunyan');
 require('dotenv').config();
 var config = require('./config');
+var https = require('https');
+var fs = require('fs');
 
 
 // set up database for express session
@@ -197,7 +199,12 @@ function ensureAuthenticated(req, res, next) {
 };
 
 app.get('/', function(req, res) {
-  res.render('index', { user: req.user });
+  res.render('index', { user: req.user,
+    signin: `/login/?p=${config.policyNames.signin}`,
+    signup: `/login/?p=${config.policyNames.signup}`,
+    updateprofile: `/login/?p=${config.policyNames.updateprofile}`,
+    resetpassword: `/login/?p=${config.policyNames.resetpassword}`
+   });
 });
 
 // '/account' is only available to logged in user
@@ -225,7 +232,7 @@ app.get('/login',
 // `passport.authenticate` will try to authenticate the content returned in
 // query (such as authorization code). If authentication fails, user will be
 // redirected to '/' (home page); otherwise, it passes to the next middleware.
-app.get('/auth/openid/return',
+app.get(config.creds.returnPath,
   function(req, res, next) {
     passport.authenticate('azuread-openidconnect',
       {
@@ -243,7 +250,7 @@ app.get('/auth/openid/return',
 // `passport.authenticate` will try to authenticate the content returned in
 // body (such as authorization code). If authentication fails, user will be
 // redirected to '/' (home page); otherwise, it passes to the next middleware.
-app.post('/auth/openid/return',
+app.post(config.creds.returnPath,
   function(req, res, next) {
     passport.authenticate('azuread-openidconnect',
       {
@@ -265,5 +272,12 @@ app.get('/logout', function(req, res){
   });
 });
 
-app.listen(3000);
+if ((process.env.SERVER_NAME || '').startsWith('https:')) {
+  https.createServer({
+    key: fs.readFileSync('server.key'),
+    cert: fs.readFileSync('server.cert')
+  }, app).listen(443);
+} else {
+  app.listen(3000);
+}
 

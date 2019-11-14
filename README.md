@@ -45,17 +45,30 @@ From your shell or command line:
 
 * Create a file `.env` in same folder as app.js like this:
 
-```
+```txt
 TENANT_NAME=your-tenant-name
 CLIENT_ID=692dc0f8-SAMPLE-b6d5-5e3c8f5cd0e4
 CLIENT_SECRET=Hvhe5-uuMw33SAMPLEzkL[?RcQEkxq-bd6
 ```
 
+You can also add any of these optional values:
+
+```txt
+SERVER_NAME=https://partnernet-dev.lexmark.com
+RETURN_PATH=/callback/j_security_check
+POLICY_SIGNIN=B2C_1_SI2
+```
 
 * `exports.useMongoDBSessionStore` is set to false in config.js, set this to true and update `exports.databaseUri`, if you want to use mongoDB session store and a different database uri.
 
 * Update `exports.mongoDBSessionMaxAge`. Here you can specify how long you want
 to keep a session in mongoDB. The unit is second(s).
+
+* **SSL** if your servername has to be https you should provide self-signed keyfiles `server.key` and `server.cert`. You generate those by running this:
+
+```sh
+openssl req -nodes -new -x509 -keyout server.key -out server.cert
+```
 
 ### Step 5: Run the application
 
