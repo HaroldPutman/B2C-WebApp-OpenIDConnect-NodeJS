@@ -1,4 +1,16 @@
 
+const serverName = process.env.SERVER_NAME || 'http://localhost:3000'
+const returnPath = process.env.RETURN_PATH || '/auth/openid/return';
+
+const policyNames = {
+  signin: process.env.POLICY_SIGNIN || 'B2C_1_signin',
+  signup: process.env.POLICY_SIGNUP || 'B2C_1_signup',
+  updateProfile: process.env.POLICY_UPDATEPROFILE ||'B2C_1_updateprofile',
+  resetPassword: process.env.POLICY_RESET_PASSWORD ||'B2C_1_resetpassword'
+}
+
+exports.policyNames = policyNames;
+
 exports.creds = {
   // Required. It must be tenant-specific endpoint, common endpoint is not supported to use B2C
   // feature.
@@ -16,7 +28,9 @@ exports.creds = {
   responseMode: 'form_post',
 
   // Required, the reply URL registered in AAD for your app
-  redirectUrl: 'http://localhost:3000/auth/openid/return',
+  redirectUrl: serverName.concat(returnPath),
+
+  returnPath: returnPath,
 
   // Required if we use http for redirectUrl
   allowHttpForRedirectUrl: true,
@@ -73,8 +87,8 @@ exports.creds = {
 // replace <signin_policy_name> with your signin policy name.
 exports.destroySessionUrl =
   `https://login.microsoftonline.com/${process.env.TENANT_NAME}.onmicrosoft.com/oauth2/v2.0/logout` +
-  '?p=B2C_1_signin' +
-  '&post_logout_redirect_uri=http://localhost:3000';
+  `?p=${policyNames.signin}` +
+  `&post_logout_redirect_uri=${serverName}`;
 
 // If you want to use the mongoDB session store for session middleware; otherwise we will use the default
 // session store provided by express-session.
