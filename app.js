@@ -272,12 +272,14 @@ app.get('/logout', function(req, res){
   });
 });
 
-if ((process.env.SERVER_NAME || '').startsWith('https:')) {
+const server = process.env.SERVER_NAME || '';
+const port = /:(\d+)$/.exec(server)[1];
+if (server.startsWith('https:')) {
   https.createServer({
     key: fs.readFileSync('server.key'),
     cert: fs.readFileSync('server.cert')
-  }, app).listen(443);
+  }, app).listen(port || 443);
 } else {
-  app.listen(3000);
+  app.listen(port || 3000);
 }
 
